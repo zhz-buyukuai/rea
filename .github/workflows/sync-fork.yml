@@ -7,16 +7,26 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
+      - name: Check out fork
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          ssh-key: ${{ secrets.FORK_SYNC_SSH_KEY }}
       - name: Sync with upstream
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh repo sync "${{ github.repository }}"
-          --source morluto/rea
-          --branch main
+          UPSTREAM_REPOSITORY: morluto/rea
+          UPSTREAM_BRANCH: main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream "https://github.com/${UPSTREAM_REPOSITORY}.git"
+          git fetch upstream "${UPSTREAM_BRANCH}"
+          git merge --no-edit "upstream/${UPSTREAM_BRANCH}"
+          git push origin "HEAD:${UPSTREAM_BRANCH}"
